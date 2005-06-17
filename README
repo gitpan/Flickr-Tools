@@ -12,7 +12,7 @@ This distribution provides two sets of classes:
 
 STATUS
 
-This is the first release of the distribution and there are only a limited number of methods available at the moment.
+This is an early release of the distribution and there are only a limited number of methods available at the moment.
 
 Also, this is a "testing the waters" version and while I hope the API of the objects will not change much in the future I cannot make any promises at this time.
 

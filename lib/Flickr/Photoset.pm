@@ -6,6 +6,7 @@ use Carp;
 
 use Flickr::API::Photosets;
 use Flickr::Person;
+use Flickr::Photo;
 
 =head1 NAME
 
@@ -13,11 +14,11 @@ Flickr::Photoset - Represents a photoset on Flickr.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -67,6 +68,17 @@ sub new {
   if (exists $params->{email} && exists $params->{password}) {
     $me->{auth_email} = $params->{email};
     $me->{auth_password} = $params->{password};
+  }
+
+  if (exists $params->{pre_load}) {
+    my $pl = $params->{pre_load};
+    $me->{data}{id} = $pl->{id} if exists $pl->{id};
+    $me->{data}{title} = $pl->{title} if exists $pl->{title};
+    $me->{data}{server} = $pl->{server} if exists $pl->{server};
+    $me->{data}{secret} = $pl->{secret} if exists $pl->{secret};
+    $me->{data}{num_photos} = $pl->{photos} if exists $pl->{photos};
+    $me->{data}{description} = $pl->{description} if exists $pl->{description};
+    $me->{data}{primary} = $pl->{primary} if exists $pl->{primary};
   }
 
   return bless $me, $class;
@@ -287,6 +299,42 @@ sub owner {
   return $s->{owner};
 }
 
+=head2 photos
+
+Returns as array of Flickr::Photo objects, representing the photos that belong to this photoset.
+
+$photos = $p->photos;
+
+Always returns undef on error.
+Also on error the $p->{error} structure will be defined.
+
+=cut
+
+sub photos {
+  my $s = shift;
+  
+  $s->_reset_error;
+ 
+  return $s->{photos} if $s->{photos};
+ 
+  if ((!exists($s->{data}{photos})) && ($s->{data}{id})) {
+    $s->_setup_photosets_api;
+    $s->_do_getPhotos($s->{data}{id});
+  }
+
+  my $photos_params = {api_key => $s->{api_key}};
+  if (exists $s->{auth_email}) {
+    $photos_params->{email} = $s->{auth_email};
+    $photos_params->{password} = $s->{auth_password};
+  }
+  foreach my $photo_data (@{$s->{data}{photos}}) {
+    $photos_params->{pre_load} = $photo_data;
+    push (@{$s->{photos}}, Flickr::Photo->new($photos_params));
+  }
+
+  return $s->{photos};
+}
+
 
 
 =head2 _reset_data
@@ -336,7 +384,7 @@ sub _setup_photosets_api {
 
 =head2 _do_getInfo
 
-Internal method used to parse the result from the Flickr::Photosets::getInfo method and fill in our data with it's results.
+Internal method used to parse the result from the Flickr::API::Photosets::getInfo method and fill in our data with it's results.
 
 =cut
 
@@ -366,7 +414,7 @@ sub _do_getInfo {
 
 =head2 _do_getContext
 
-Internal method used to parse the result from the Flickr::Photosets::getContext method and fill in our data with it's results.
+Internal method used to parse the result from the Flickr::API::Photosets::getContext method and fill in our data with it's results.
 
 =cut
 
@@ -389,6 +437,31 @@ sub _do_getContext {
   return $resp->{success};
 }
 
+=head2 _do_getPhotos
+
+Internal method used to parse the result from the Flickr::API::Photosets::getPhotos method and fill in our data with it's results.
+
+=cut
+
+sub _do_getPhotos {
+  my $s = shift;
+  my $id = shift;
+  
+  my $resp = $s->{photosets_api}->getPhotos($id);
+  if ($resp->{success}) {
+    foreach my $photo_data (@{$resp->{photos}}) {
+      push (@{$s->{data}{photos}}, $photo_data);
+    }
+  }
+  else {
+    carp "Got an error from Flickr: ".$resp->{error_message}." (".$resp->{error_code}.")";
+    $s->{error}{code} = $resp->{error_code};
+    $s->{error}{message} = $resp->{error_message};
+    return undef;
+  }
+
+  return $resp->{success};
+}
 
 
 =head1 AUTHOR

@@ -1,5 +1,9 @@
 Flickr-Tools to-dos and ideas for future developments.
 
+As of release 0.02:
+
+- No new To-Dos added for this version.
+
 As of release 0.01:
 
 - Add the methods that are still lacking from the Flickr API to the lower-level Flickr::API::* classes;
@@ -17,10 +21,5 @@ As of release 0.01:
   - photosets (I belong to)
 
 
-- Flickr::API::Photosets already implement a number of methods which allow the Flickr::* classes to be way more flexible then they are now. Must implement all these features ASAP!
-- Obvious methods to implement in Flickr::Photoset:
-  - photos (that belong to me)
-
 - Obvious methods to implement on Flickr::Person:
-  - photosets (I own)
   - photos (I own)

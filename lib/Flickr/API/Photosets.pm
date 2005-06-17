@@ -9,15 +9,15 @@ use Flickr::API::Utils;
 
 =head1 NAME
 
-Flickr::Photosets - The Perl interface to the Flickr API's flickr.photosets.* methods.
+Flickr::API::Photosets - The Perl interface to the Flickr API's flickr.photosets.* methods.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -374,4 +374,4 @@ under the same terms as Perl itself.
 
 =cut
 
-1; # End of Flickr::Photosets
+1; # End of Flickr::API::Photosets

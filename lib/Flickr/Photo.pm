@@ -13,11 +13,11 @@ Flickr::Photo - Represents a photo on Flickr.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -67,6 +67,14 @@ sub new {
   if (exists $params->{email} && exists $params->{password}) {
     $me->{auth_email} = $params->{email};
     $me->{auth_password} = $params->{password};
+  }
+
+  if (exists $params->{pre_load}) {
+    my $pl = $params->{pre_load};
+    $me->{data}{title} = $pl->{title} if exists $pl->{title};
+    $me->{data}{id} = $pl->{id} if exists $pl->{id};
+    $me->{data}{server} = $pl->{server} if exists $pl->{server};
+    $me->{data}{secret} = $pl->{secret} if exists $pl->{secret};
   }
 
   return bless $me, $class;

@@ -5,6 +5,8 @@ use strict;
 use Carp;
 
 use Flickr::API::People;
+use Flickr::API::Photosets;
+use Flickr::Photoset;
 
 =head1 NAME
 
@@ -12,11 +14,11 @@ Flickr::Person - Represents a person of Flickr.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -436,6 +438,80 @@ sub photo_count {
   return $s->{data}{photos}{count};
 }
 
+=head2 photosets
+
+Returns an array of Flickr::Photoset objects representing the photosets this user has on Flickr.
+
+$photosets = $p->photosets;
+
+Always returns undef on error.
+Also on error the $p->{error} structure will be defined.
+
+=cut
+
+sub photosets {
+  my $s = shift;
+
+  $s->_reset_error;
+
+  return $s->{photosets} if $s->{photosets};
+
+  if ((!$s->{data}{photosets}) && ($s->{data}{id})) {
+    $s->_setup_photosets_api;
+    $s->_do_getList($s->{data}{id});
+  }
+
+  my $photosets_params = {api_key => $s->{api_key}};
+  if (exists $s->{auth_email}) {
+    $photosets_params->{email} = $s->{auth_email};
+    $photosets_params->{password} = $s->{auth_password};  }
+  foreach my $photoset_data (@{$s->{data}{photosets}}) {
+    $photosets_params->{pre_load} = $photoset_data;
+    push (@{$s->{photosets}}, Flickr::Photoset->new($photosets_params));
+  }
+
+  return $s->{photosets};
+}
+
+=head2 photos
+
+NOTICE: This function is not yet implemented! Disregard this documentation for now.
+
+$photos = $p->photos;
+
+Always returns undef on error.
+Also on error the $p->{error} structure will be defined.
+
+=cut
+
+sub photos {
+  my $s = shift;
+
+  $s->_reset_error;
+
+  $s->{error}{code} = 9999;
+  $s->{error}{message} = "Method not yet implemented on Flickr::Person";
+  return undef;
+  
+  return $s->{photos} if $s->{photos};
+
+  if ((!$s->{data}{photos}) && ($s->{data}{id})) {
+    $s->_setup_photos_api;
+    $s->_do_search($s->{data}{id});
+  }
+
+  my $photos_params = {api_key => $s->{api_key}};
+  if (exists $s->{auth_email}) {
+    $photos_params->{email} = $s->{auth_email};
+    $photos_params->{password} = $s->{auth_password};  }
+  foreach my $photos_data (@{$s->{data}{photos}}) {
+    $photos_params->{pre_load} = $photos_data;
+    push (@{$s->{photos}}, Flickr::Photo->new($photos_params));
+  }
+
+  return $s->{photos};
+}
+
 
 =head2 _reset_data
 
@@ -482,9 +558,30 @@ sub _setup_people_api {
   }
 }
 
+=head2 _setup_photosets_api
+
+Internal method used to setup the Flickr::API::Photosets object.
+
+=cut
+
+sub _setup_photosets_api {
+  my $s = shift;
+  
+  if (!exists $s->{photosets_api}) {
+    if ($s->{auth_email}) {
+      $s->{photosets_api} = Flickr::API::Photosets->new($s->{api_key},
+                                                  $s->{auth_email},
+						                          $s->{auth_password});
+    }
+    else {
+      $s->{photosets_api} = Flickr::API::Photosets->new($s->{api_key});
+    }
+  }
+}
+
 =head2 do_getInfo
 
-Internal method used to parse the result from the Flickr::People::getInfo method and fill in our data with it's results.
+Internal method used to parse the result from the Flickr::API::People::getInfo method and fill in our data with it's results.
 
 =cut
 
@@ -503,6 +600,31 @@ sub _do_getInfo {
     $s->{data}{photos}{firstdate} = $resp->{photos}{firstdate};
     $s->{data}{photos}{count} = $resp->{photos}{count};
     $s->{data}{photos}{firstdatetaken} = $resp->{photos}{firstdatetaken};
+  }
+  else {
+    carp "Got an error from Flickr: ".$resp->{error_message}." (".$resp->{error_code}.")";
+    $s->{error}{code} = $resp->{error_code};
+    $s->{error}{message} = $resp->{error_message};
+  }
+
+  return $resp->{success};
+}
+
+=head2 do_getList
+
+Internal method used to parse the result from the Flickr::API::Photosets::getList method and fill in our data with it's results.
+
+=cut
+
+sub _do_getList {
+  my $s = shift;
+  my $id = shift;
+  
+  my $resp = $s->{photosets_api}->getList($id);
+  if ($resp->{success}) {
+    foreach my $photoset_data (@{$resp->{photosets}}) {
+      push (@{$s->{data}{photosets}}, $photoset_data);
+    }
   }
   else {
     carp "Got an error from Flickr: ".$resp->{error_message}." (".$resp->{error_code}.")";

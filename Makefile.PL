@@ -5,7 +5,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     NAME                => 'Flickr-Tools',
     AUTHOR              => 'Nuno Nunes <nfmnunes@cpan.org>',
-    VERSION             => '0.01',
+    VERSION             => '0.02',
     ABSTRACT            => 'Higher-level interface to Flickr data.',
     PL_FILES            => {},
     PREREQ_PM => {
